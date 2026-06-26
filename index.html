@@ -379,38 +379,64 @@ function openPlayer(cardEl) {
 }
 
 async function loadVideo(link) {
-  const platform = link.platform;
+  // Priority 1: stored video_url — direct HTML5, no server needed, speed control works on phone
+  if (link.video_url) {
+    setupHtml5Player({ video_url: link.video_url, combined: true, title: link.title, duration: link.duration }, link, true);
+    return;
+  }
 
+  // Priority 2: local server (yt-dlp fresh URL) — handles missing or expired stored URLs
   if (serverOnline) {
-    // Try local server for HTML5 playback with speed control
     try {
-      const r = await fetch(`${SERVER}/video?url=${encodeURIComponent(link.url)}`, { signal: AbortSignal.timeout(8000) });
+      const r = await fetch(`${SERVER}/video?url=${encodeURIComponent(link.url)}`, { signal: AbortSignal.timeout(10000) });
       const info = await r.json();
       if (info.video_url && !info.error) {
-        setupHtml5Player(info, link);
+        setupHtml5Player(info, link, false);
         return;
       }
     } catch { /* fall through */ }
   }
 
-  // Fallback: platform embed
+  // Priority 3: platform embed (only works for /share/v/ FB videos; Reels show the help error)
   setupEmbed(link);
 }
 
-function setupHtml5Player(info, link) {
+function setupHtml5Player(info, link, fromCache) {
   vid.src = info.video_url;
   vid.load();
+
+  // If the CDN URL is expired, video will fire error — cascade to server/embed
+  vid.onerror = async () => {
+    vid.onerror = null;
+    vid.src = '';
+    vid.style.display = 'none';
+    document.getElementById('custom-controls').classList.remove('visible');
+    document.getElementById('playerLoading').style.display = 'flex';
+
+    if (serverOnline) {
+      try {
+        const r = await fetch(`${SERVER}/video?url=${encodeURIComponent(link.url)}`, { signal: AbortSignal.timeout(10000) });
+        const fresh = await r.json();
+        if (fresh.video_url && !fresh.error) {
+          setupHtml5Player(fresh, link, false);
+          return;
+        }
+      } catch {}
+    }
+    setupEmbed(link);
+  };
+
   vid.style.display = 'block';
   document.getElementById('playerLoading').style.display = 'none';
   document.getElementById('custom-controls').classList.add('visible');
 
   const note = document.getElementById('modeNote');
   note.className = 'mode-note speed-on';
-  if (!info.combined) {
-    note.textContent = '⚡ Speed control ON · Note: audio may be missing in DASH format — use "Original" if needed';
-  } else {
-    note.textContent = '⚡ Speed control ON — 0.5× for slow practice, 0.75× for drilling, 1× to lock it in';
-  }
+  note.textContent = fromCache
+    ? '⚡ Speed control ON — 0.5× for slow practice, 0.75× for drilling, 1× to lock it in'
+    : (info.combined
+        ? '⚡ Speed control ON (fresh URL via local server)'
+        : '⚡ Speed control ON · audio may be separate DASH track — use "Original" if silent');
 
   vid.play().catch(() => {});
 }
@@ -419,7 +445,10 @@ function setupEmbed(link) {
   const frame = document.getElementById('embed-frame');
   const note = document.getElementById('modeNote');
 
-  if (link.platform === 'facebook') {
+  // Only /share/v/ regular videos work in the FB Video Plugin — Reels redirect to the help error page
+  const isFbRegularVideo = link.platform === 'facebook' && link.url.includes('/share/v/');
+
+  if (isFbRegularVideo) {
     frame.src = fbEmbedUrl(link.url);
     frame.style.display = 'block';
     document.getElementById('playerLoading').style.display = 'none';
@@ -434,17 +463,17 @@ function setupEmbed(link) {
       note.className = 'mode-note';
       note.textContent = 'Instagram embed — requires being logged into Instagram in your browser. Start local server for speed control.';
     } else {
-      // Can't embed — just show open button
-      document.getElementById('playerLoading').style.display = 'none';
-      note.className = 'mode-note';
-      note.textContent = 'Cannot embed this link directly. Click "Original" to open on Instagram.';
+      showOpenOnly(note, 'Cannot embed this link. Click "Original" to open on Instagram.');
     }
   } else {
-    // Generic: open original
-    document.getElementById('playerLoading').style.display = 'none';
-    note.className = 'mode-note';
-    note.textContent = 'Direct embed not available. Click "Original" to open.';
+    showOpenOnly(note, 'Video URL has expired. Click "Original" to open, or start the local server to refresh it.');
   }
+}
+
+function showOpenOnly(note, message) {
+  document.getElementById('playerLoading').style.display = 'none';
+  note.className = 'mode-note';
+  note.textContent = message;
 }
 
 function closePlayer() {

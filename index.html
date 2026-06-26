@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guitar Licks Catalog</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --border: #2e2e2e;
+      --accent: #e85d04;
+      --accent2: #ff7c2b;
+      --text: #f0f0f0;
+      --muted: #888;
+      --fb: #1877f2;
+      --ig-start: #f9ce34;
+      --ig-end: #ee2a7b;
+      --yt: #ff0000;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #1a0a00 0%, #0f0f0f 60%);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .logo svg { width: 28px; height: 28px; fill: var(--accent); }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 180px;
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      fill: var(--muted);
+      pointer-events: none;
+    }
+
+    #search {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 1rem 0.55rem 2.25rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #search:focus { border-color: var(--accent); }
+    #search::placeholder { color: var(--muted); }
+
+    /* TOOLBAR */
+    .toolbar {
+      max-width: 1400px;
+      margin: 1rem auto 0;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+
+    .filter-group::-webkit-scrollbar { display: none; }
+
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.35rem 0.9rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    .sort-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      color: var(--text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      outline: none;
+      margin-left: auto;
+    }
+
+    .count {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-left: 0.5rem;
+      white-space: nowrap;
+    }
+
+    /* GRID */
+    .grid {
+      max-width: 1400px;
+      margin: 1.25rem auto;
+      padding: 0 1.5rem 3rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(232, 93, 4, 0.15);
+    }
+
+    .thumb-wrap {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: #111;
+      overflow: hidden;
+    }
+
+    .thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.2s;
+    }
+
+    .thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+    }
+
+    .thumb-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: #333;
+    }
+
+    .platform-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      backdrop-filter: blur(6px);
+    }
+
+    .badge-facebook { background: rgba(24, 119, 242, 0.85); color: white; }
+    .badge-instagram {
+      background: linear-gradient(135deg, rgba(249,206,52,0.85), rgba(238,42,123,0.85));
+      color: white;
+    }
+    .badge-youtube { background: rgba(255, 0, 0, 0.85); color: white; }
+    .badge-other { background: rgba(80, 80, 80, 0.85); color: #ccc; }
+
+    .card-body {
+      padding: 0.75rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .card-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+
+    .card-date {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: auto;
+    }
+
+    /* EMPTY STATE */
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+
+    .empty svg { width: 64px; height: 64px; fill: #333; margin-bottom: 1rem; }
+    .empty h3 { font-size: 1rem; color: var(--text); margin-bottom: 0.5rem; }
+
+    /* LOADING */
+    .loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .modal h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+
+    .modal input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      margin-bottom: 1rem;
+    }
+
+    .modal input:focus { border-color: var(--accent); }
+
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+
+    .btn {
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+    .modal-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      padding: 0.6rem;
+      background: var(--surface2);
+      border-radius: 6px;
+      border-left: 3px solid var(--accent);
+      display: none;
+    }
+
+    /* ADD BUTTON */
+    .add-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 0.45rem 1rem;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .add-btn svg { width: 14px; height: 14px; fill: white; }
+    .add-btn:hover { background: var(--accent2); }
+
+    @media (max-width: 600px) {
+      header { padding: 0.75rem 1rem; }
+      .toolbar { padding: 0 1rem; }
+      .grid { padding: 0 1rem 3rem; gap: 0.75rem; }
+      h1 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.071 3.929a6 6 0 0 0-8.485 0l-7.778 7.778a6 6 0 0 0 8.485 8.485l7.778-7.778a6 6 0 0 0 0-8.485zm-1.414 7.071-7.778 7.779a4 4 0 0 1-5.657-5.657l3.182-3.182 1.768 1.768-1.769 1.768a2 2 0 1 0 2.829 2.829l1.768-1.768 1.768 1.768 1.768-1.768-1.768-1.768 1.061-1.061 1.768 1.768 1.06-1.06-1.767-1.768.707-.707a4 4 0 0 1 5.657 5.657z"/>
+      </svg>
+      <h1>Guitar <span>Licks</span></h1>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <input type="search" id="search" placeholder="Search licks…" autocomplete="off">
+    </div>
+
+    <button class="add-btn" onclick="openModal()">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      Add
+    </button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="filter-group" id="platformFilters">
+    <button class="filter-btn active" data-platform="all">All</button>
+    <button class="filter-btn" data-platform="facebook">Facebook</button>
+    <button class="filter-btn" data-platform="instagram">Instagram</button>
+    <button class="filter-btn" data-platform="youtube">YouTube</button>
+    <button class="filter-btn" data-platform="other">Other</button>
+  </div>
+
+  <select class="sort-select" id="sortSelect">
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="az">A → Z</option>
+    <option value="za">Z → A</option>
+  </select>
+
+  <span class="count" id="count"></span>
+</div>
+
+<div class="grid" id="grid">
+  <div class="loading">
+    <div class="spinner"></div>
+    <p>Loading licks…</p>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <h2>Add a Lick</h2>
+    <input type="url" id="linkInput" placeholder="https://www.instagram.com/reel/..." autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLink()">Submit</button>
+    </div>
+    <p class="modal-note" id="modalNote">
+      Saved to your Guitar Licks Telegram group. It will appear in the catalog on next sync.
+    </p>
+  </div>
+</div>
+
+<script>
+  let allLinks = [];
+  let filtered = [];
+  let activePlatform = 'all';
+  let activeSort = 'newest';
+  let searchQuery = '';
+
+  const GUITAR_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.071 3.929a6 6 0 0 0-8.485 0l-7.778 7.778a6 6 0 0 0 8.485 8.485l7.778-7.778a6 6 0 0 0 0-8.485zm-1.414 7.071-7.778 7.779a4 4 0 0 1-5.657-5.657l3.182-3.182 1.768 1.768-1.769 1.768a2 2 0 1 0 2.829 2.829l1.768-1.768 1.768 1.768 1.768-1.768-1.768-1.768 1.061-1.061 1.768 1.768 1.06-1.06-1.767-1.768.707-.707a4 4 0 0 1 5.657 5.657z"/></svg>`;
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function platformLabel(p) {
+    return { facebook: 'FB', instagram: 'IG', youtube: 'YT', other: 'Web' }[p] || 'Web';
+  }
+
+  function renderCard(link) {
+    const title = link.title || extractDomain(link.url);
+    const hasThumbnail = !!link.thumbnail;
+    const thumbHtml = hasThumbnail
+      ? `<img class="thumb" src="${escHtml(link.thumbnail)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=thumb-placeholder>${GUITAR_SVG}</div>'">`
+      : `<div class="thumb-placeholder">${GUITAR_SVG}</div>`;
+
+    return `
+      <a class="card" href="${escHtml(link.url)}" target="_blank" rel="noopener">
+        <div class="thumb-wrap">
+          ${thumbHtml}
+          <span class="platform-badge badge-${link.platform}">${platformLabel(link.platform)}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${escHtml(title)}</div>
+          <div class="card-date">${formatDate(link.date)}</div>
+        </div>
+      </a>`;
+  }
+
+  function extractDomain(url) {
+    try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function applyFilters() {
+    let result = [...allLinks];
+
+    if (activePlatform !== 'all') result = result.filter(l => l.platform === activePlatform);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(l =>
+        (l.title || '').toLowerCase().includes(q) ||
+        (l.description || '').toLowerCase().includes(q) ||
+        l.url.toLowerCase().includes(q)
+      );
+    }
+
+    result.sort((a, b) => {
+      if (activeSort === 'newest') return new Date(b.date) - new Date(a.date);
+      if (activeSort === 'oldest') return new Date(a.date) - new Date(b.date);
+      const ta = (a.title || extractDomain(a.url)).toLowerCase();
+      const tb = (b.title || extractDomain(b.url)).toLowerCase();
+      if (activeSort === 'az') return ta.localeCompare(tb);
+      if (activeSort === 'za') return tb.localeCompare(ta);
+      return 0;
+    });
+
+    filtered = result;
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    const total = allLinks.length;
+    const shown = filtered.length;
+
+    document.getElementById('count').textContent =
+      shown === total ? `${total} licks` : `${shown} of ${total} licks`;
+
+    if (shown === 0) {
+      grid.innerHTML = `
+        <div class="empty">
+          <svg viewBox="0 0 24 24">${GUITAR_SVG}</svg>
+          <h3>No licks found</h3>
+          <p>Try a different search or filter</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(renderCard).join('');
+  }
+
+  // Events
+  document.getElementById('search').addEventListener('input', e => {
+    searchQuery = e.target.value.trim();
+    applyFilters();
+  });
+
+  document.getElementById('sortSelect').addEventListener('change', e => {
+    activeSort = e.target.value;
+    applyFilters();
+  });
+
+  document.getElementById('platformFilters').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activePlatform = btn.dataset.platform;
+    applyFilters();
+  });
+
+  // Modal
+  function openModal() {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.getElementById('linkInput').focus();
+  }
+
+  function closeModal(e) {
+    if (!e || e.target === document.getElementById('modalOverlay')) {
+      document.getElementById('modalOverlay').classList.remove('open');
+      document.getElementById('linkInput').value = '';
+      document.getElementById('modalNote').style.display = 'none';
+    }
+  }
+
+  function submitLink() {
+    const url = document.getElementById('linkInput').value.trim();
+    if (!url) return;
+    document.getElementById('modalNote').style.display = 'block';
+    document.getElementById('linkInput').value = '';
+  }
+
+  // Load data
+  async function loadData() {
+    try {
+      const res = await fetch('data/links.json');
+      if (!res.ok) throw new Error('No data');
+      allLinks = await res.json();
+      applyFilters();
+    } catch {
+      document.getElementById('grid').innerHTML = `
+        <div class="empty">
+          <svg viewBox="0 0 24 24">${GUITAR_SVG}</svg>
+          <h3>No licks yet</h3>
+          <p>Add your first guitar lick link above</p>
+        </div>`;
+      document.getElementById('count').textContent = '0 licks';
+    }
+  }
+
+  loadData();
+</script>
+</body>
+</html>

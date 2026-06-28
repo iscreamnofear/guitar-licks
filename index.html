@@ -365,7 +365,8 @@ function openPlayer(cardEl) {
 
   document.getElementById('playerTitle').textContent = currentLink.title || domain(url);
   document.getElementById('playerMeta').textContent = `${fmtDate(currentLink.date)} · ${currentLink.platform}`;
-  document.getElementById('openOriginalBtn').onclick = () => window.open(url, '_blank');
+  const openUrl = currentLink.canonical_url || url;
+  document.getElementById('openOriginalBtn').onclick = () => window.open(openUrl, '_blank');
 
   document.getElementById('playerLoading').style.display = 'flex';
   document.getElementById('html5-player').style.display = 'none';
@@ -445,11 +446,13 @@ function setupEmbed(link) {
   const frame = document.getElementById('embed-frame');
   const note = document.getElementById('modeNote');
 
-  // Only /share/v/ regular videos work in the FB Video Plugin — Reels redirect to the help error page
-  const isFbRegularVideo = link.platform === 'facebook' && link.url.includes('/share/v/');
+  // FB: use canonical watch?v=ID URL for the plugin (works for regular videos; Reels may still block)
+  // /share/r/ URLs fail in the plugin; canonical_url (watch?v=ID) has much better plugin support
+  const fbEmbedTarget = link.canonical_url || (link.url.includes('/share/v/') ? link.url : null);
+  const isFbEmbeddable = link.platform === 'facebook' && !!fbEmbedTarget;
 
-  if (isFbRegularVideo) {
-    frame.src = fbEmbedUrl(link.url);
+  if (isFbEmbeddable) {
+    frame.src = fbEmbedUrl(fbEmbedTarget);
     frame.style.display = 'block';
     document.getElementById('playerLoading').style.display = 'none';
     note.className = 'mode-note';
